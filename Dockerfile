@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Playwright için sistem bağımlılıkları
+# Playwright için sistem bağımlılıkları (Harika eklemişsin!)
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -24,20 +24,19 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Dosyalar aynı hizada olduğu için direkt kopyalayabiliriz
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Playwright Chromium'u indir
 RUN playwright install chromium
+RUN playwright install-deps chromium
 
+# Tüm projeyi (backend dahil) içeri alıyoruz
 COPY . .
 
-# Dedektif komutumuz işini yaptı, silebilirsin veya kalabilir
-RUN ls -la
+# Python'a çalışma ortamını net bir şekilde söylüyoruz
+ENV PYTHONPATH="/app"
 
-# İŞTE HAYAT KURTARAN DOKUNUŞ: Uvicorn çalışmadan önce price_tracker klasörünün içine giriyoruz!
-WORKDIR /app/price_tracker
-ENV PYTHONPATH="/app/price_tracker"
-
-# Artık Uvicorn içeride olduğu için backend'i şıp diye bulacak
+# Ve Fişi Takıyoruz! (backend klasörü /app içinde olduğu için şıp diye bulacak)
 CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
