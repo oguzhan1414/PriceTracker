@@ -31,5 +31,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN playwright install chromium
 
 COPY . .
+
+# DEDEKTİF KOMUTU: Sunucuya nelerin kopyalandığını build loglarına yazdırır
+RUN ls -la
+
 ENV PYTHONPATH="/app"
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
+
+# DÜZELTİLMİŞ BAŞLATMA KOMUTU: uvicorn yerine python -m uvicorn kullanıyoruz
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
