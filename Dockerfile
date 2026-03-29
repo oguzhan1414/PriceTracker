@@ -32,10 +32,12 @@ RUN playwright install chromium
 
 COPY . .
 
-# DEDEKTİF KOMUTU: Sunucuya nelerin kopyalandığını build loglarına yazdırır
+# Dedektif komutumuz işini yaptı, silebilirsin veya kalabilir
 RUN ls -la
 
-ENV PYTHONPATH="/app"
+# İŞTE HAYAT KURTARAN DOKUNUŞ: Uvicorn çalışmadan önce price_tracker klasörünün içine giriyoruz!
+WORKDIR /app/price_tracker
+ENV PYTHONPATH="/app/price_tracker"
 
-# DÜZELTİLMİŞ BAŞLATMA KOMUTU: uvicorn yerine python -m uvicorn kullanıyoruz
+# Artık Uvicorn içeride olduğu için backend'i şıp diye bulacak
 CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
