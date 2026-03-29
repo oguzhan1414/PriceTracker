@@ -36,7 +36,6 @@ RUN playwright install chromium
 COPY . .
 
 # Python'a çalışma ortamını net bir şekilde söylüyoruz
-ENV PYTHONPATH="/app"
-
+ENV PYTHONPATH="/app:/app/price_tracker"
 # Ve Fişi Takıyoruz! (backend klasörü /app içinde olduğu için şıp diye bulacak)
-CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
+CMD sh -c "uvicorn backend.main:app --host 0.0.0.0 --port 8000 --loop asyncio || (cd price_tracker && uvicorn backend.main:app --host 0.0.0.0 --port 8000 --loop asyncio)"
