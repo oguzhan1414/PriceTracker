@@ -1,0 +1,10 @@
+.route-loader {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(700px 320px at 50% -80px, rgba(59, 130, 246, 0.14), transparent 60%), #05070d;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

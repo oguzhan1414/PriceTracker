@@ -1,0 +1,65 @@
+:root {
+  /* Matte Black / High Contrast Theme */
+  --bg-dark: #050505; /* Blacker base */
+  --bg-gradient: linear-gradient(to bottom, #0a0a0a, #000000);
+  
+  --surface-dark: #0f0f0f; /* Very dark grey for cards */
+  --surface-hover: #161616;
+  
+  --glass-bg: rgba(20, 20, 20, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.06);
+
+  /* Accents - Sharp and Defined */
+  --neon-green: #4ade80; /* Brighter green for positivity */
+  --neon-red: #f87171;   /* Soft red for drops */
+  --neon-blue: #3b82f6;  /* Standard bright blue */
+  --neon-purple: #8b5cf6;
+
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa; /* Zinc 400 */
+  --text-muted: #52525b;     /* Zinc 600 */
+  
+  /* Shadows - Minimal/None for flat look */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  
+  /* Fonts */
+  --font-display: 'Inter', -apple-system, sans-serif;
+  
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+
+
+  /* Text Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Legacy Colors (Adapted for Dark Mode) */
+  --primary-color: var(--neon-blue);
+  --primary-dark: #2563eb;
+  --success-color: var(--neon-green);
+  --warning-color: #f59e0b;
+  --danger-color: var(--neon-red);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+  
+  /* Fonts */
+  --font-sm: 0.875rem;
+  --font-base: 1rem;
+  --font-lg: 1.125rem;
+  --font-xl: 1.25rem;
+  --font-2xl: 1.5rem;
+  
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}

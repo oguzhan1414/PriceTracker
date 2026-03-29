@@ -1,0 +1,130 @@
+/* Shared styles for dashboard child pages (Overview, Watchlist, Deals, Settings). */
+
+.dashboard-page {
+    --accent: #3b82f6;
+    --accent-rgb: 59, 130, 246;
+    --accent-secondary: #8b5cf6;
+}
+
+.dashboard-page .header-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(var(--accent-rgb), 0.28);
+}
+
+.dashboard-page .gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.dashboard-page .section-filters,
+.dashboard-page .terminal-filters {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dashboard-page .filter-btn {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a1a1aa;
+    padding: 0.375rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dashboard-page .filter-btn:hover,
+.dashboard-page .filter-btn.active {
+    background: rgba(var(--accent-rgb), 0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.dashboard-page .filter-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+}
+
+.dashboard-page .section-header {
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-page .table-wrapper {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.dashboard-page .table-wrapper table tbody tr {
+    transition: background-color 0.18s ease;
+}
+
+.dashboard-page .table-wrapper table tbody tr:hover {
+    background: rgba(148, 163, 184, 0.05);
+}
+
+.dashboard-page .table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+
+.dashboard-page .table-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dashboard-page .table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.38);
+    border-radius: 999px;
+}
+
+.dashboard-page .table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.58);
+}
+
+.dashboard-page .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dashboard-page .action-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    padding: 0.375rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-page .action-btn.view {
+    color: var(--accent);
+}
+
+.dashboard-page .action-btn.view:hover {
+    background: rgba(var(--accent-rgb), 0.2);
+    transform: scale(1.05);
+}
+
+.dashboard-page .action-btn.delete {
+    color: #ef4444;
+}
+
+.dashboard-page .action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.05);
+}
