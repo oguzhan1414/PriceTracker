@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Playwright Chromium'u indir
 RUN playwright install chromium
-RUN playwright install-deps chromium
+
 
 # Tüm projeyi (backend dahil) içeri alıyoruz
 COPY . .
