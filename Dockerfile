@@ -42,8 +42,9 @@ RUN playwright install chromium
 # Tüm proje dosyalarını kopyala
 COPY . .
 
-# PYTHONPATH
-ENV PYTHONPATH="/app"
+# /app → 'backend.main' bulunabilsin
+# /app/backend → 'scrapers', 'cache', 'auth', 'database' modülleri bulunabilsin
+ENV PYTHONPATH="/app:/app/backend"
 
 # Railway $PORT env'ini dinamik okur, fallback 8000
 CMD uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}
