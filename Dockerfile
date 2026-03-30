@@ -1,7 +1,5 @@
-# python:3.11-slim-bookworm = Debian 12 (Bookworm) — Trixie'deki paket ismi değişikliklerini önler
 FROM python:3.11-slim-bookworm
 
-# Tüm Playwright Chromium bağımlılıklarını elle kuruyoruz (playwright install-deps yerine)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     gnupg \
@@ -30,24 +28,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Önce /app'e requirements kopyala (cache layer için)
 WORKDIR /app
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Playwright Chromium binary
 RUN playwright install chromium
 
-# Tüm projeyi kopyala
 COPY . .
 
-# Çalışma dizinini backend'e al:
-#   - 'main:app' direkt bulunur
-#   - 'scrapers', 'cache', 'auth', 'database' importları çalışır
-WORKDIR /app/backend
+# /app       → 'backend' paketi bulunuyor  (backend/__init__.py mevcut)
+# /app/backend → 'scrapers', 'cache', 'auth', 'database' modülleri
+ENV PYTHONPATH="/app:/app/backend"
 
-# PYTHONPATH: /app/backend (scrapers, cache vb.) + /app (gerekirse üst paketler için)
-ENV PYTHONPATH="/app/backend:/app"
-
-# Railway dinamik PORT verir, yoksa 8000
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Exec form kullanıyoruz: shell expansion için sh -c ile sarıyoruz
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
