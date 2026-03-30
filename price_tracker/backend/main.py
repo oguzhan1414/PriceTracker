@@ -172,7 +172,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"], # Frontend adreslerin
+    allow_origins=["http://localhost:5173", "http://localhost:3000",
+                   "https://price-tracker-prt.vercel.app"], # Frontend adreslerin
     allow_credentials=True, # BU ÇOK KRİTİK! (Biletlere izin ver)
     allow_methods=["*"],
     allow_headers=["*"],
