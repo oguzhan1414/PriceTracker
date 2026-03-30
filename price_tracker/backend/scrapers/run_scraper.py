@@ -21,12 +21,36 @@ async def main():
     if site == "trendyol":
         from scrapers.trendyol import TrendyolScraper
         scraper = TrendyolScraper()
-    elif site == "hepsiburada":
-        from scrapers.hepsiburada import HepsiburadaScraper
-        scraper = HepsiburadaScraper()
+    elif site == "n11":
+        from scrapers.n11 import N11Scraper
+        scraper = N11Scraper()
+    elif site == "itopya":
+        from scrapers.itopya import ItopyaScraper
+        scraper = ItopyaScraper()
+    elif site == "incehesap":
+        from scrapers.incehesap import IncehesapScraper
+        scraper = IncehesapScraper()
+    elif site == "vatan":
+        from scrapers.vatan import VatanScraper
+        scraper = VatanScraper()
+    elif site == "newegg":
+        from scrapers.newegg import NeweggScraper
+        scraper = NeweggScraper()
+    elif site == "banggood":
+        from scrapers.banggood import BanggoodScraper
+        scraper = BanggoodScraper()
+    elif site == "etsy":
+        from scrapers.etsy import EtsyScraper
+        scraper = EtsyScraper()
     elif site == "amazon":
         from scrapers.amazon import AmazonScraper
         scraper = AmazonScraper()
+    elif site == "ebay":
+        from scrapers.ebay import EbayScraper
+        scraper = EbayScraper()
+    elif site == "aliexpress":
+        from scrapers.aliexpress import AliexpressScraper
+        scraper = AliexpressScraper()
     else:
         print(json.dumps(None))
         return

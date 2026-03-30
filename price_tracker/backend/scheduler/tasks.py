@@ -1,4 +1,4 @@
-﻿from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from loguru import logger
 from database.connection import get_database
@@ -62,7 +62,7 @@ async def scrape_job():
             await history_repo.create({
                 "product_id": product_id,
                 "price": result["price"],
-                "currency": "TRY",
+                "currency": result.get("currency", "TRY"),
                 "timestamp": datetime.utcnow(),
             })
 

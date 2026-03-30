@@ -113,8 +113,8 @@ export const useTrackedItems = () => {
         void init();
     }, [applySnapshot, load]);
 
-    const add = useCallback(async (url: string, targetPrice?: number) => {
-        await trackApi.add(url, targetPrice);
+    const add = useCallback(async (url: string, targetPrice?: number, currency: string = "TRY") => {
+        await trackApi.add(url, targetPrice, currency);
         await load({ force: true });
     }, [load]);
 

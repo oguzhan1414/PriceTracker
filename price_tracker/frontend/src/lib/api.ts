@@ -181,6 +181,7 @@ export type TrackedProduct = {
     original_url?: string;
     image_url?: string | null;
     current_price?: number | null;
+    currency?: string;
     last_checked_at?: string | null;
     created_at?: string;
 };
@@ -276,12 +277,13 @@ export const trackApi = {
         method: 'GET',
     }),
 
-    add: (url: string, targetPrice?: number) =>
+    add: (url: string, targetPrice?: number, currency: string = "TRY") =>
         request<{ message?: string; mesaj: string; product_id: string; scraping: boolean }>('/api/track/add', {
             method: 'POST',
             body: {
                 url,
                 target_price: targetPrice,
+                currency,
             },
         }),
 

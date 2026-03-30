@@ -7,11 +7,11 @@ import './Deals.css';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1595225476474-87563907a212?q=80&w=2671&auto=format&fit=crop';
 
-const formatCurrency = (value: number | null | undefined, locale: string) => {
+const formatCurrency = (value: number | null | undefined, currencyCode: string = 'TRY', locale: string) => {
     if (value == null) return locale === 'tr-TR' ? 'Bekleniyor' : 'Pending';
     return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: 'TRY',
+        currency: currencyCode,
         maximumFractionDigits: 0,
     }).format(value);
 };
@@ -145,6 +145,7 @@ const Deals = () => {
                     imageUrl: item.product.image_url || null,
                     price: current,
                     oldPrice: target,
+                    currency: item.product.currency || 'TRY',
                     discount: discountRate,
                     discountAmount: absoluteSave,
                     remainingTime:
@@ -196,7 +197,7 @@ const Deals = () => {
                 <div className="stat-card">
                     <div className="stat-info">
                         <span className="stat-label">{t.stats.totalSavings}</span>
-                        <div className="stat-value">{formatCurrency(totalSavings, locale)}</div>
+                        <div className="stat-value">{formatCurrency(totalSavings, 'TRY', locale)}</div>
                         <div className="stat-sub">{t.stats.totalSavingsSub}</div>
                     </div>
                     <div className="stat-icon" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
@@ -248,8 +249,8 @@ const Deals = () => {
                         <h3>{t.bestNow}</h3>
                         <p className="featured-name">{bestDeal.name}</p>
                         <div className="featured-pricing">
-                            <span className="featured-price">{formatCurrency(bestDeal.price, locale)}</span>
-                            <span className="featured-old-price">{formatCurrency(bestDeal.oldPrice, locale)}</span>
+                            <span className="featured-price">{formatCurrency(bestDeal.price, bestDeal.currency, locale)}</span>
+                            <span className="featured-old-price">{formatCurrency(bestDeal.oldPrice, bestDeal.currency, locale)}</span>
                             <span className="featured-discount">{Math.max(0, bestDeal.discount).toFixed(1)}% {t.off}</span>
                         </div>
                         <button className="featured-btn" onClick={() => bestDeal.url && window.open(bestDeal.url, '_blank', 'noopener,noreferrer')}>
@@ -307,8 +308,8 @@ const Deals = () => {
                                         </td>
                                         <td>
                                             <div className="price-cell">
-                                                <span className="current-price">{formatCurrency(deal.price, locale)}</span>
-                                                <span className="old-price">{t.table.target} {formatCurrency(deal.oldPrice, locale)}</span>
+                                                <span className="current-price">{formatCurrency(deal.price, deal.currency, locale)}</span>
+                                                <span className="old-price">{t.table.target} {formatCurrency(deal.oldPrice, deal.currency, locale)}</span>
                                             </div>
                                         </td>
                                         <td>
@@ -316,7 +317,7 @@ const Deals = () => {
                                                 <TrendingDown size={12} />
                                                 <span>{Math.max(0, deal.discount).toFixed(1)}%</span>
                                             </div>
-                                            <div className="savings-amount">{t.table.save} {formatCurrency(Math.max(0, deal.discountAmount), locale)}</div>
+                                            <div className="savings-amount">{t.table.save} {formatCurrency(Math.max(0, deal.discountAmount), deal.currency, locale)}</div>
                                         </td>
                                         <td>
                                             <MiniSparkline data={deal.chartData} color="#f43f5e" />

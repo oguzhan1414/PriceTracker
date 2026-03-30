@@ -6,11 +6,11 @@ import { useAuth } from '../../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Overview.css';
 
-const formatCurrency = (value: number | null | undefined, locale: string) => {
+const formatCurrency = (value: number | null | undefined, currencyCode: string = 'TRY', locale: string) => {
     if (value == null) return locale === 'tr-TR' ? 'Bekleniyor' : 'Pending';
     return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: 'TRY',
+        currency: currencyCode,
         maximumFractionDigits: 0,
     }).format(value);
 };
@@ -74,7 +74,9 @@ const Overview = () => {
         const now = Date.now();
         return opportunities.filter((item) => {
             const updatedAt = item.product.last_checked_at || item.created_at;
-            const ts = new Date(updatedAt).getTime();
+            let dStr = updatedAt;
+            if (dStr && !dStr.endsWith('Z') && !dStr.includes('+')) dStr += 'Z';
+            const ts = new Date(dStr).getTime();
             if (Number.isNaN(ts)) return false;
             return now - ts <= 24 * 60 * 60 * 1000;
         }).length;
@@ -113,7 +115,11 @@ const Overview = () => {
     const trackingSinceDays = useMemo(() => {
         if (items.length === 0) return 0;
         const firstDate = items
-            .map((i) => new Date(i.created_at).getTime())
+            .map((i) => {
+                let dStr = i.created_at;
+                if (dStr && !dStr.endsWith('Z') && !dStr.includes('+')) dStr += 'Z';
+                return new Date(dStr).getTime();
+            })
             .filter((t) => !Number.isNaN(t))
             .sort((a, b) => a - b)[0];
         if (!firstDate) return 0;
@@ -128,7 +134,7 @@ const Overview = () => {
         { label: t.stats.totalTracked, value: String(totalTracked), change: `${sourcesCount} ${t.stats.sources}`, changeType: 'neutral', icon: Activity, color: '#3b82f6' },
         { label: t.stats.last24h, value: String(dealsLast24h), change: t.stats.newDeals, changeType: dealsLast24h > 0 ? 'positive' : 'neutral', icon: Tag, color: '#f43f5e' },
         { label: t.stats.health, value: `%${systemHealth}`, change: systemHealth >= 95 ? t.stats.stable : t.stats.waiting, changeType: systemHealth >= 95 ? 'positive' : 'negative', icon: Shield, color: '#10b981' },
-        { label: t.stats.netSavings, value: formatCurrency(netSavings, locale), change: `${trackingSinceDays} ${t.stats.days}`, changeType: 'positive', icon: TrendingUp, color: '#8b5cf6' },
+        { label: t.stats.netSavings, value: formatCurrency(netSavings, 'TRY', locale), change: `${trackingSinceDays} ${t.stats.days}`, changeType: 'positive', icon: TrendingUp, color: '#8b5cf6' },
     ];
 
     return (

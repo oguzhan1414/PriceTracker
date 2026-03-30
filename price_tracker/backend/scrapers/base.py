@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from abc import ABC, abstractmethod
 from playwright.async_api import async_playwright, Browser, Page, Playwright
 from loguru import logger
+from playwright_stealth import Stealth
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -30,8 +31,10 @@ class BaseScraper(ABC):
         """Tarayıcıyı asenkron olarak başlatır."""
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(
-            headless=True,
+            headless=False,
+            ignore_default_args=["--enable-automation"],
             args=[
+                "--headless=new",
                 "--disable-blink-features=AutomationControlled",
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
@@ -64,20 +67,10 @@ class BaseScraper(ABC):
             java_script_enabled=True
         )
         
-        # Context seviyesinde stealth scriptleri ekleyelim
-        # 1. WebDriver özelliğini gizle
-        await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        
-        # 2. Chrome runtime mock
-        await context.add_init_script("window.chrome = { runtime: {} };")
-        
-        # 3. Plugins mock (Boş değil, dolu gibi göster)
-        await context.add_init_script("Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});")
-        
-        # 4. Dilleri ayarla
-        await context.add_init_script("Object.defineProperty(navigator, 'languages', {get: () => ['tr-TR', 'tr', 'en-US', 'en']});")
-        
         page = await context.new_page()
+        stealth = Stealth()
+        await stealth.apply_stealth_async(page)
+        
         return page
 
     async def random_wait(self, min_sec: float = 1.0, max_sec: float = 3.0):
@@ -86,34 +79,8 @@ class BaseScraper(ABC):
         await asyncio.sleep(wait_time)
 
     async def apply_stealth(self, page: Page):
-        """Basit Stealth teknikleri uygular (Bot korumasını aşmak için)."""
-        try:
-            # WebDriver özelliğini gizle
-            await page.add_init_script("""
-                Object.defineProperty(navigator, 'webdriver', {
-                    get: () => undefined
-                });
-            """)
-            # Chrome runtime mock
-            await page.add_init_script("""
-                window.chrome = {
-                    runtime: {}
-                };
-            """)
-            # Plugins mock (Boş değil, dolu gibi göster)
-            await page.add_init_script("""
-                Object.defineProperty(navigator, 'plugins', {
-                    get: () => [1, 2, 3, 4, 5]
-                });
-            """)
-            # Dilleri ayarla
-            await page.add_init_script("""
-                Object.defineProperty(navigator, 'languages', {
-                    get: () => ['tr-TR', 'tr', 'en-US', 'en']
-                });
-            """)
-        except Exception as e:
-            logger.warning(f"Stealth uygulanamadı: {e}")
+        """Artık doğrudan playwright-stealth kullanıyoruz, bu metot geriye dönük uyumluluk için boş tutulabilir veya kullanılmayabilir."""
+        pass
 
     @staticmethod
     def _normalize_image_url(url: str | None) -> str | None:
@@ -158,12 +125,30 @@ class BaseScraper(ABC):
                 r"https://cdn\\.dsmcdn\\.com/[^\"'\\s>]+",
                 r"https://ty[0-9]\\.dsmcdn\\.com/[^\"'\\s>]+",
             ],
-            "hepsiburada": [
-                r"https://productimages\\.hepsiburada\\.net/[^\"'\\s>]+",
+            "n11": [
+                r"https://n11scdn\\.akamaized\\.net/a1/org/[^\"'\\s>]+"
             ],
             "amazon": [
                 r"https://m\\.media-amazon\\.com/images/I/[^\"'\\s>]+",
             ],
+            "itopya": [
+                r"https://img\\.itopya\\.com/[^\"'\\s>]+"
+            ],
+            "incehesap": [
+                r"https://incehesap\\.com/resim/[^\"'\\s>]+"
+            ],
+            "vatan": [
+                r"https://cdn\\.vatanbilgisayar\\.com/Upload/[^\"'\\s>]+"
+            ],
+            "newegg": [
+                r"https://c1\\.neweggimages\\.com/ProductImage/[^\"'\\s>]+"
+            ],
+            "banggood": [
+                r"https://imgaz\\d?\\.banggood\\.com/[^\"'\\s>]+"
+            ],
+            "etsy": [
+                r"https://i\\.etsystatic\\.com/[^\"'\\s>]+"
+            ]
         }
 
         candidate = self._first_match_from_patterns(html, site_patterns.get(site, []))
@@ -177,13 +162,62 @@ class BaseScraper(ABC):
             ],
         )
 
+    def extract_price_and_currency(self, text: str) -> tuple[float | None, str]:
+        """Fiyatı ve para birimini ayıklar. USD, EUR, GBP gibi kurların format farklılıklarını yönetir."""
+        if not text:
+            return None, "TRY"
+            
+        text_upper = text.upper()
+        currency = "TRY"
+        if "$" in text_upper or "USD" in text_upper:
+            currency = "USD"
+        elif "€" in text_upper or "EUR" in text_upper:
+            currency = "EUR"
+        elif "£" in text_upper or "GBP" in text_upper:
+            currency = "GBP"
+            
+        try:
+            nums = re.findall(r'\d+(?:[.,]\d+)*', text)
+            if not nums:
+                return None, currency
+                
+            raw_price = nums[-1] # En sondaki veya en büyük eşleşmeyi alıyoruz (genelde fiyat sondadır veya tekdir)
+            
+            # Öncelikle USD gibi kur logolarıyla eşleşen tam bloğu (Örn: $50.99) bulmaya çalışalım
+            matches_with_currency = re.findall(r'(?:USD|EUR|GBP|TRY|\$|€|£|₺)\s*(\d+(?:[.,]\d+)*)|(\d+(?:[.,]\d+)*)\s*(?:USD|EUR|GBP|TRY|\$|€|£|₺)', text_upper)
+            if matches_with_currency:
+                # Eşleşmelerin içindeki boş olmayan gruba bak
+                for m1, m2 in matches_with_currency:
+                    valid_match = m1 if m1 else m2
+                    if valid_match:
+                        raw_price = valid_match
+                        break
+
+            if currency in ["USD", "GBP"]:
+                # Amerikan / İngiliz stili: 1,299.99 -> 1299.99
+                cleaned = raw_price.replace(',', '')
+                return float(cleaned), currency
+            else:
+                # Avrupa / TR stili: 1.250,99 -> 1250.99
+                cleaned = raw_price
+                if ',' in cleaned and '.' in cleaned:
+                    cleaned = cleaned.replace('.', '').replace(',', '.')
+                elif ',' in cleaned:
+                    cleaned = cleaned.replace(',', '.')
+                elif '.' in cleaned:
+                    parts = cleaned.split('.')
+                    if len(parts[-1]) == 3:
+                        cleaned = cleaned.replace('.', '')
+                return float(cleaned), currency
+        except Exception as e:
+            logger.warning(f"Fiyat/Kur parse edilemedi ({e}): {text}")
+            return None, currency
+
     def clean_price(self, text: str) -> float | None:
         """Fiyat metnini float'a çevirir (1.299,90 TL -> 1299.90)."""
         if not text:
             return None
         try:
-            import re
-            
             def parse_match(raw_price: str) -> float | None:
                 cleaned = re.sub(r'[^\d.,]', '', raw_price)
                 if not cleaned:

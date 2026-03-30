@@ -43,6 +43,8 @@ from auth.jwt_handler import (
     hash_token, REFRESH_TOKEN_EXPIRE_DAYS
 )
 
+from scrapers.engine import detect_site, run_scraper_process as _engine_run_scraper
+
 load_dotenv()
 
 COOKIE_SECURE = settings.cookie_secure
@@ -163,8 +165,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Price Tracker API",
-    description="Price tracking system for Trendyol, Hepsiburada and Amazon TR",
-    version="2.0.0",
+    description="Multi-site price tracking: Trendyol, Amazon, N11, Vatan, İtopya, İncehesap, Newegg, Banggood, Etsy, eBay, AliExpress",
+    version="2.1.0",
     lifespan=lifespan,
 )
 
@@ -177,15 +179,6 @@ app.add_middleware(
 )
 
 
-# ¦¦ Yardımcı ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
-def detect_site(url: str) -> str:
-    if "trendyol.com" in url:
-        return "trendyol"
-    elif "hepsiburada.com" in url:
-        return "hepsiburada"
-    elif "amazon.com.tr" in url:
-        return "amazon"
-    return "diger"
 
 
 def serialize_doc(doc: dict) -> dict:
@@ -799,6 +792,7 @@ async def add_tracked_item(
                 "name": "",
                 "image_url": None,
                 "current_price": None,
+                "currency": data.currency or "TRY",
                 "in_stock": True,
                 "active": True,
                 "error_count": 0,
@@ -960,8 +954,8 @@ async def remove_tracked_item(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not authorized for this action"
         )
-    await tracked_repo.deactivate(item_id)
-    return {"message": "Tracking stopped", "mesaj": "Tracking stopped"}
+    await tracked_repo.delete(item_id)
+    return {"message": "Tracking deleted completely", "mesaj": "Tracking deleted completely"}
 
 
 @app.patch("/api/track/update/{item_id}", tags=["Track"])
@@ -1143,7 +1137,7 @@ async def scrape_and_update(product_id: str, url: str, db):
         await history_repo.create({
             "product_id": product_id,
             "price": result["price"],
-            "currency": "TRY",
+            "currency": result.get("currency", "TRY"),
             "timestamp": datetime.utcnow(),
         })
 

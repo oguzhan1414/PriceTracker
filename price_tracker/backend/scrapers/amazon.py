@@ -43,6 +43,7 @@ class AmazonScraper(BaseScraper):
             title = (await title_el.inner_text()).strip() if title_el else None
 
             price = None
+            currency = "TRY"
             
             # Selector stratejileri (Sırasıyla dene)
             selectors = [
@@ -63,17 +64,24 @@ class AmazonScraper(BaseScraper):
                         fraction = await page.query_selector('span.a-price-fraction')
                         if fraction:
                             txt += f".{await fraction.inner_text()}"
+                            
+                        # Özellikle Amazon US'de $ simgesi .a-price-symbol sınıfındadır, bunu bulmayı deneyelim.
+                        symbol = await page.query_selector('span.a-price-symbol')
+                        if symbol:
+                            txt = f"{await symbol.inner_text()} {txt}"
                     
-                    cleaned = self.clean_price(txt)
-                    if cleaned:
-                        price = cleaned
+                    p, curr = self.extract_price_and_currency(txt)
+                    if p:
+                        price = p
+                        currency = curr
                         break
 
             # Hala bulunamadıysa regex ile dene
             if not price:
                  match = re.search(r'([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})\s*TL', body_text)
                  if match:
-                      price = self.clean_price(match.group(1) + " TL")
+                      p, curr = self.extract_price_and_currency(match.group(1) + " TRY")
+                      price, currency = p, curr
 
             if not price:
                 logger.warning(f"Fiyat bulunamadı: {url}")
@@ -96,12 +104,12 @@ class AmazonScraper(BaseScraper):
             result = {
                 "name": title or "Unknown Product",
                 "price": price,
-                "currency": "TRY",
+                "currency": currency,
                 "inStock": not out_of_stock,
                 "image_url": image_url,
             }
 
-            logger.success(f"Amazon scrape başarılı: {result['name']} -> {result['price']} TRY")
+            logger.success(f"Amazon scrape başarılı: {result['name']} -> {result['price']} {currency}")
             return result
 
         except Exception as e:

@@ -8,7 +8,11 @@ import { useCookieConsent } from '../../consent/CookieConsentContext';
 const DEALS_READ_KEY_PREFIX = 'dashboard:deals:last-read-at';
 
 const formatRelativeTime = (iso: string, isTr: boolean) => {
-    const diffMs = Date.now() - new Date(iso).getTime();
+    let dateStr = iso;
+    if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+        dateStr += 'Z';
+    }
+    const diffMs = Date.now() - new Date(dateStr).getTime();
     if (Number.isNaN(diffMs) || diffMs < 0) return isTr ? 'Az once' : 'Recently';
     const mins = Math.floor(diffMs / 60000);
     if (mins < 1) return isTr ? 'Az once' : 'Recently';
@@ -63,13 +67,17 @@ const Topbar = () => {
                 if (current == null || target == null) return false;
                 if (current > target) return false;
                 const updatedAt = item.product.last_checked_at || item.created_at;
-                const ts = new Date(updatedAt).getTime();
+                let dStr = updatedAt;
+                if (dStr && !dStr.endsWith('Z') && !dStr.includes('+')) dStr += 'Z';
+                const ts = new Date(dStr).getTime();
                 if (Number.isNaN(ts)) return false;
                 return now - ts <= 24 * 60 * 60 * 1000;
             })
             .map((item) => {
                 const updatedAt = item.product.last_checked_at || item.created_at;
-                const ts = new Date(updatedAt).getTime();
+                let dStr = updatedAt;
+                if (dStr && !dStr.endsWith('Z') && !dStr.includes('+')) dStr += 'Z';
+                const ts = new Date(dStr).getTime();
                 return {
                     id: item.tracked_item_id,
                     name: item.product.name || (isTr ? 'Urun' : 'Product'),

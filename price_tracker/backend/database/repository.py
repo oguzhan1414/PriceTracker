@@ -259,12 +259,9 @@ class TrackedItemRepository:
             doc["id"] = str(doc["_id"])
         return doc
 
-    async def deactivate(self, item_id: str):
-        await self.collection.update_one(
-            {"_id": ObjectId(item_id)},
-            {"$set": {"is_active": False}}
-        )
-        logger.info(f"Takip durduruldu: {item_id}")
+    async def delete(self, item_id: str):
+        await self.collection.delete_one({"_id": ObjectId(item_id)})
+        logger.info(f"Takip tamamen silindi: {item_id}")
 
     async def reactivate(self, item_id: str, target_price: Optional[float] = None):
         update_fields = {"is_active": True}

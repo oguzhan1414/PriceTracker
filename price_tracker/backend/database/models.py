@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
@@ -117,6 +117,7 @@ class TrackedItem(BaseModel):
 class TrackRequest(BaseModel):
     url: str
     target_price: Optional[float] = None
+    currency: Optional[str] = "TRY"
 
 
 class TrackedItemResponse(BaseModel):

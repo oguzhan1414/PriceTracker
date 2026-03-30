@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ExternalLink, Trash2, Bell, BellOff, Plus, TrendingUp, TrendingDown, Minus, Clock, Zap, Edit2, Info } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { useAuth } from '../../auth/AuthContext';
@@ -8,18 +8,22 @@ import './Watchlist.css';
 
 const FALLBACK_IMAGE = 'https://placehold.co/400x400/0f172a/38bdf8?text=Image';
 
-const formatCurrency = (value: number | null | undefined, locale: string, isTr: boolean) => {
+const formatCurrency = (value: number | null | undefined, currencyCode: string = 'TRY', locale: string, isTr: boolean) => {
     if (value == null) return isTr ? 'Bekleniyor' : 'Pending';
     return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: 'TRY',
+        currency: currencyCode,
         maximumFractionDigits: 0,
     }).format(value);
 };
 
 const formatRelativeTime = (iso?: string | null, isTr = false) => {
     if (!iso) return isTr ? 'Henuz guncellenmedi' : 'Not updated yet';
-    const diffMs = Date.now() - new Date(iso).getTime();
+    let dateStr = iso;
+    if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+        dateStr += 'Z';
+    }
+    const diffMs = Date.now() - new Date(dateStr).getTime();
     if (Number.isNaN(diffMs) || diffMs < 0) return isTr ? 'Az once' : 'Recently';
     const mins = Math.floor(diffMs / 60000);
     if (mins < 1) return isTr ? 'Az once' : 'Recently';
@@ -115,6 +119,7 @@ const Watchlist = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [addUrl, setAddUrl] = useState('');
     const [addTarget, setAddTarget] = useState('');
+    const [addCurrency, setAddCurrency] = useState('TRY');
     const [isAddSubmitting, setIsAddSubmitting] = useState(false);
 
     const [editTargetModal, setEditTargetModal] = useState<{ id: string; name: string; target: string } | null>(null);
@@ -180,6 +185,7 @@ const rows = useMemo(() => {
             deltaPercent,
             updatedAt: item.product.last_checked_at || item.created_at,
             url: item.product.original_url || '',
+            currency: item.product.currency || 'TRY',
             alert: alertState,
             notification: {
                 ...rowNotification,
@@ -382,17 +388,20 @@ const rows = useMemo(() => {
         setIsAddSubmitting(true);
         const draftUrl = addUrl;
         const draftTarget = addTarget;
+        const draftCurrency = addCurrency;
         setIsAddModalOpen(false);
         setAddUrl('');
         setAddTarget('');
+        setAddCurrency('TRY');
 
         try {
-            await add(url, parsed);
+            await add(url, parsed, draftCurrency);
             showToast('success', tx('Product added to watchlist successfully.', 'Urun takip listesine eklendi.'));
         } catch (err) {
             setIsAddModalOpen(true);
             setAddUrl(draftUrl);
             setAddTarget(draftTarget);
+            setAddCurrency(draftCurrency);
             showToast('error', err instanceof Error ? err.message : tx('Failed to add product', 'Urun eklenemedi'));
         } finally {
             setIsAddSubmitting(false);
@@ -478,11 +487,11 @@ const rows = useMemo(() => {
                     <div className="stat-label">{tx('Active Alerts', 'Aktif Alarmlar')}</div>
                 </div>
                 <div className="stat-item">
-                    <div className="stat-value">{formatCurrency(totalValue, locale, isTr)}</div>
+                    <div className="stat-value">{formatCurrency(totalValue, 'TRY', locale, isTr)}</div>
                     <div className="stat-label">{tx('Total Value', 'Toplam Deger')}</div>
                 </div>
                 <div className="stat-item">
-                    <div className="stat-value">{formatCurrency(totalSavings, locale, isTr)}</div>
+                    <div className="stat-value">{formatCurrency(totalSavings, 'TRY', locale, isTr)}</div>
                     <div className="stat-label">{tx('Potential Savings', 'Olasi Tasarruf')}</div>
                 </div>
             </div>
@@ -603,7 +612,7 @@ const rows = useMemo(() => {
                                         </td>
                                         <td>
                                             <div className="price-cell">
-                                                <span className="current-price">{formatCurrency(row.current, locale, isTr)}</span>
+                                                <span className="current-price">{formatCurrency(row.current, row.currency, locale, isTr)}</span>
                                             </div>
                                         </td>
                                         <td>
@@ -617,7 +626,7 @@ const rows = useMemo(() => {
                                         </td>
                                         <td>
                                             <div className="target-cell">
-                                                <span className="target-price">{formatCurrency(row.target, locale, isTr)}</span>
+                                                <span className="target-price">{formatCurrency(row.target, row.currency, locale, isTr)}</span>
                                                 {row.nearTarget && (
                                                     <span className="near-target-badge">
                                                         <Zap size={10} />
@@ -741,7 +750,7 @@ const rows = useMemo(() => {
                 <div className="watchlist-modal-overlay" role="dialog" aria-modal="true">
                     <div className="watchlist-modal-card">
                         <h3 className="watchlist-modal-title">{tx('Add New Product', 'Yeni Urun Ekle')}</h3>
-                        <p className="watchlist-modal-description">{tx('Enter a Trendyol/Hepsiburada/Amazon product link and optional target price.', 'Trendyol/Hepsiburada/Amazon urun linki ve istege bagli hedef fiyat gir.')}</p>
+                        <p className="watchlist-modal-description">{tx('Enter a product link (Amazon, N11, Itopya, Vatan, Newegg, Etsy, Banggood, eBay, etc...) and an optional target price.', 'Desteklenen bir E-Ticaret linki (Amazon, N11, İtopya, Vatan, Trendyol, Banggood, Etsy, Newegg vb.) ve isteğe bağlı hedef fiyat girin.')}</p>
 
                         <label className="watchlist-modal-label">{tx('Product URL', 'Urun URLsi')}</label>
                         <input
@@ -758,6 +767,18 @@ const rows = useMemo(() => {
                             value={addTarget}
                             onChange={(e) => setAddTarget(e.target.value)}
                         />
+
+                        <label className="watchlist-modal-label">{tx('Currency', 'Para Birimi')}</label>
+                        <select
+                            className="watchlist-modal-input"
+                            value={addCurrency}
+                            onChange={(e) => setAddCurrency(e.target.value)}
+                        >
+                            <option value="TRY">TRY (₺)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="GBP">GBP (£)</option>
+                        </select>
 
                         <div className="watchlist-modal-actions">
                             <button className="watchlist-btn secondary" onClick={() => setIsAddModalOpen(false)} disabled={isAddSubmitting}>{tx('Cancel', 'Iptal')}</button>

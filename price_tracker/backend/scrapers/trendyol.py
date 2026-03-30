@@ -18,8 +18,6 @@ class TrendyolScraper(BaseScraper):
             await self.launch_browser()
             
         try:
-            # BaseScraper.new_page zaten context stealth uyguluyor
-            await self.random_wait(1.0, 2.0)  # Bot tespiti için rastgele bekleme
             page = await self.new_page()
             
             logger.info(f"Trendyol scrape başlıyor: {url}")
@@ -109,3 +107,5 @@ class TrendyolScraper(BaseScraper):
         except Exception as e:
             logger.error(f"Trendyol scrape hatası: {e}")
             return None
+        finally:
+            await self.close()

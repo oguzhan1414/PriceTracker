@@ -12,12 +12,29 @@ SCRIPT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_scra
 
 
 def detect_site(url: str) -> str:
-    if "trendyol.com" in url:
+    url_lower = url.lower()
+    if "trendyol.com" in url_lower:
         return "trendyol"
-    elif "hepsiburada.com" in url:
-        return "hepsiburada"
-    elif "amazon.com.tr" in url:
+    elif "n11.com" in url_lower:
+        return "n11"
+    elif "vatanbilgisayar.com" in url_lower:
+        return "vatan"
+    elif "itopya.com" in url_lower:
+        return "itopya"
+    elif "incehesap.com" in url_lower:
+        return "incehesap"
+    elif "amazon." in url_lower:
         return "amazon"
+    elif "newegg." in url_lower:
+        return "newegg"
+    elif "banggood." in url_lower:
+        return "banggood"
+    elif "etsy." in url_lower:
+        return "etsy"
+    elif "ebay." in url_lower:
+        return "ebay"
+    elif "aliexpress." in url_lower:
+        return "aliexpress"
     return "unknown"
 
 
@@ -90,7 +107,7 @@ async def scrape_product(product: dict, product_repo: ProductRepository, history
             should_notify = await analyzer.should_notify(product_id, target_price)
             logger.info(f"Bildirim gerekli mi: {should_notify}, target_price: {target_price}")
 
-            if True: #şuan tüm düşüşlerde bildirim gitsin diye True yaptım, normalde should_notify olmalı bu kısım ilerde düzeltilecek ve öyle servis edilecek
+            if should_notify:
                 message = format_alert(
                     name=result["name"] or product.get("name", "Ürün"),
                     old_price=old_price,
@@ -106,11 +123,11 @@ async def scrape_product(product: dict, product_repo: ProductRepository, history
             logger.warning(f"Deneme {attempt} başarısız: {e}")
 
             if attempt == 1:
-                logger.info("15 dakika bekleniyor...")
-                await asyncio.sleep(60 * 15)
+                logger.info("30 saniye bekleniyor...")
+                await asyncio.sleep(30)
             elif attempt == 2:
-                logger.info("1 saat bekleniyor...")
-                await asyncio.sleep(60 * 60)
+                logger.info("2 dakika bekleniyor...")
+                await asyncio.sleep(120)
             else:
                 await product_repo.increment_error(product_id)
                 logger.error(f"Tüm denemeler başarısız: {url}")
