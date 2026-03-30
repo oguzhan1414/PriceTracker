@@ -172,12 +172,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"], # Frontend adreslerin
+    allow_credentials=True, # BU ÇOK KRİTİK! (Biletlere izin ver)
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 
 
@@ -336,16 +335,20 @@ async def login(data: UserLogin, request: Request, db=Depends(get_db)):
         "email": user["email"],
         "plan": user.get("plan", "free")
     })
+    
+    # --- DEĞİŞEN KISIM BURASI ---
     response.set_cookie(
         key="access_token", value=access_token,
-        httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=15 * 60
+        httponly=True, secure=True, samesite="none", max_age=15 * 60
     )
     response.set_cookie(
         key="refresh_token", value=refresh_token,
-        httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=7 * 24 * 60 * 60
+        httponly=True, secure=True, samesite="none", max_age=7 * 24 * 60 * 60
     )
+    # ----------------------------
+    
     logger.info(f"User logged in: {user['email']}")
-    return response
+    return responsee
 
 
 @app.post("/api/auth/logout", tags=["Auth"])
@@ -418,11 +421,11 @@ async def refresh(
     response = JSONResponse(content={"message": "Token refreshed", "mesaj": "Token refreshed"})
     response.set_cookie(
         key="access_token", value=access_token,
-        httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=15 * 60
+        httponly=True, secure=True, samesite="none", max_age=15 * 60
     )
     response.set_cookie(
-        key="refresh_token", value=new_refresh_token,
-        httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=7 * 24 * 60 * 60
+        key="refresh_token", value=refresh_token,
+        httponly=True, secure=True, samesite="none", max_age=7 * 24 * 60 * 60
     )
     return response
 
