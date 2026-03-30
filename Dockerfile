@@ -37,9 +37,8 @@ RUN playwright install chromium
 
 COPY . .
 
-# /app       → 'backend' paketi bulunuyor  (backend/__init__.py mevcut)
-# /app/backend → 'scrapers', 'cache', 'auth', 'database' modülleri
-ENV PYTHONPATH="/app:/app/backend"
+# Entrypoint'i çalıştırılabilir yap
+RUN chmod +x /app/entrypoint.sh
 
-# Exec form kullanıyoruz: shell expansion için sh -c ile sarıyoruz
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Tüm ENV'lerden bağımsız çalışan startup scripti
+ENTRYPOINT ["/app/entrypoint.sh"]
