@@ -41,8 +41,9 @@ RUN playwright install-deps chromium
 
 COPY . .
 
-# Entrypoint'i çalıştırılabilir yap
-RUN chmod +x /app/entrypoint.sh
+# Python'un 'backend' klasörünü sorunsuz tanıması için yol haritası ekledik
+ENV PYTHONPATH=/app
 
-# Tüm ENV'lerden bağımsız çalışan startup scripti
-ENTRYPOINT ["/app/entrypoint.sh"]
+# SİNSİ entrypoint.sh DOSYASINI ÇÖPE ATTIK! 
+# Sunucuyu Railway'in dinamik portuyla doğrudan ayağa kaldırıyoruz:
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
