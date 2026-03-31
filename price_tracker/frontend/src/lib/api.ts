@@ -48,8 +48,11 @@ function emitSessionExpired() {
 }
 
 async function rawRequest(path: string, options: ApiRequestOptions = {}): Promise<Response> {
+    const token = localStorage.getItem("access_token");
+
     const headers: HeadersInit = {
         'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...(options.headers || {}),
     };
 
@@ -167,11 +170,13 @@ export type TelegramLinkStartResponse = {
     ttl_minutes: number;
 };
 
-export type LoginResponse = {
+type LoginResponse = {
     message?: string;
     mesaj: string;
     email: string;
     plan: string;
+    access_token?: string;
+    refresh_token?: string;
 };
 
 export type TrackedProduct = {
@@ -222,6 +227,12 @@ export const authApi = {
             method: 'POST',
             body: { email, password },
         });
+        if (response.access_token) {
+            localStorage.setItem("access_token", response.access_token);
+        }
+        if (response.refresh_token) {
+            localStorage.setItem("refresh_token", response.refresh_token);
+        }
         invalidateCachedGet(['/api/auth/me', '/api/payments/config', '/api/payments/subscription']);
         return response;
     },
@@ -240,11 +251,12 @@ export const authApi = {
 
     logout: async () => {
         const response = await request<{ message?: string; mesaj: string }>('/api/auth/logout', { method: 'POST' });
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
         invalidateCachedGet(['/api/auth/me', '/api/payments/config', '/api/payments/subscription']);
         return response;
     },
 };
-
 export const telegramApi = {
     startLink: () =>
         request<TelegramLinkStartResponse>('/api/telegram/link/start', {
