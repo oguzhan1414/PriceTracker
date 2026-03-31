@@ -3,7 +3,7 @@ from typing import Optional
 import asyncio
 import os
 import secrets
-from urllib import response
+
 
 if sys.platform == 'win32' and os.getenv("PYTEST_RUNNING") != "1":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -170,16 +170,13 @@ app = FastAPI(
     version="2.1.0",
     lifespan=lifespan,
 )
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Frontend adreslerin
-    allow_credentials=True, # BU ÇOK KRİTİK! (Biletlere izin ver)
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 def serialize_doc(doc: dict) -> dict:
     doc.pop("_id", None)
@@ -338,22 +335,17 @@ async def login(data: UserLogin, request: Request, db=Depends(get_db)):
     })
     
     # --- DEĞİŞEN KISIM BURASI ---
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=15 * 60
+    cookie_opts = "HttpOnly; Secure; SameSite=None; Path=/"
+    response.headers.append(
+        "Set-Cookie",
+        f"access_token={access_token}; {cookie_opts}; Max-Age={15 * 60}"
     )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=7 * 24 * 60 * 60
+    response.headers.append(
+        "Set-Cookie",
+        f"refresh_token={refresh_token}; {cookie_opts}; Max-Age={7 * 24 * 60 * 60}"
     )
+
+    
     # ----------------------------
     
     logger.info(f"User logged in: {user['email']}")
@@ -428,21 +420,15 @@ async def refresh(
     })
 
     response = JSONResponse(content={"message": "Token refreshed", "mesaj": "Token refreshed"})
-    response.set_cookie(
-    key="access_token",
-    value=access_token,
-    httponly=True,
-    secure=True,
-    samesite="none",
-    max_age=15 * 60
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=7 * 24 * 60 * 60
+    cookie_opts = "HttpOnly; Secure; SameSite=None; Path=/"
+    response.headers.append(
+        "Set-Cookie",
+        f"access_token={access_token}; {cookie_opts}; Max-Age={15 * 60}"
+    )   
+
+    response.headers.append(
+        "Set-Cookie",
+        f"refresh_token={new_refresh_token}; {cookie_opts}; Max-Age={7 * 24 * 60 * 60}"
     )
     return response
 
