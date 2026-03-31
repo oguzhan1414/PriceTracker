@@ -62,19 +62,11 @@ _failed_login_attempts: dict[str, deque] = defaultdict(deque)
 async def get_db(request: Request):
     return request.app.state.db
 
+
 async def get_current_user(
-    request: Request,
+    access_token: str = Cookie(default=None),
     db=Depends(get_db)
 ) -> dict:
-    access_token = None
-
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        access_token = auth_header.split(" ")[1]
-
-    if not access_token:
-        access_token = request.cookies.get("access_token")
-
     if not access_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -87,6 +79,7 @@ async def get_current_user(
             detail="Invalid or expired token"
         )
     return {"id": payload["sub"], "email": payload["email"]}
+
 
 def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
@@ -338,21 +331,11 @@ async def login(data: UserLogin, request: Request, db=Depends(get_db)):
         "message": "Login successful",
         "mesaj": "Login successful",
         "email": user["email"],
-        "plan": user.get("plan", "free"),
-        "access_token": access_token,
-        "refresh_token": refresh_token,
+        "plan": user.get("plan", "free")
     })
     
     # --- DEĞİŞEN KISIM BURASI ---
-    cookie_opts = "HttpOnly; Secure; SameSite=None; Path=/"
-    response.headers.append(
-        "Set-Cookie",
-        f"access_token={access_token}; {cookie_opts}; Max-Age={15 * 60}"
-    )
-    response.headers.append(
-        "Set-Cookie",
-        f"refresh_token={refresh_token}; {cookie_opts}; Max-Age={7 * 24 * 60 * 60}"
-    )
+    
 
     
     # ----------------------------
@@ -429,16 +412,16 @@ async def refresh(
     })
 
     response = JSONResponse(content={"message": "Token refreshed", "mesaj": "Token refreshed"})
-    cookie_opts = "HttpOnly; Secure; SameSite=None; Path=/"
-    response.headers.append(
-        "Set-Cookie",
-        f"access_token={access_token}; {cookie_opts}; Max-Age={15 * 60}"
-    )   
+    # cookie_opts = "HttpOnly; Secure; SameSite=None; Path=/"
+    # response.headers.append(
+    #     "Set-Cookie",
+    #     f"access_token={access_token}; {cookie_opts}; Max-Age={15 * 60}"
+    # )   
 
-    response.headers.append(
-        "Set-Cookie",
-        f"refresh_token={new_refresh_token}; {cookie_opts}; Max-Age={7 * 24 * 60 * 60}"
-    )
+    # response.headers.append(
+    #     "Set-Cookie",
+    #     f"refresh_token={new_refresh_token}; {cookie_opts}; Max-Age={7 * 24 * 60 * 60}"
+    # )
     return response
 
 
