@@ -328,10 +328,12 @@ async def login(data: UserLogin, request: Request, db=Depends(get_db)):
     })
 
     response = JSONResponse(content={
-        "message": "Login successful",
-        "mesaj": "Login successful",
-        "email": user["email"],
-        "plan": user.get("plan", "free")
+    "message": "Login successful",
+    "mesaj": "Login successful",
+    "email": user["email"],
+    "plan": user.get("plan", "free"),
+    "access_token": access_token,
+    "refresh_token": refresh_token,
     })
     
     # --- DEĞİŞEN KISIM BURASI ---
