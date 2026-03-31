@@ -3,6 +3,7 @@ from typing import Optional
 import asyncio
 import os
 import secrets
+from urllib import response
 
 if sys.platform == 'win32' and os.getenv("PYTEST_RUNNING") != "1":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -338,17 +339,25 @@ async def login(data: UserLogin, request: Request, db=Depends(get_db)):
     
     # --- DEĞİŞEN KISIM BURASI ---
     response.set_cookie(
-        key="access_token", value=access_token,
-        httponly=True, secure=True, samesite="none", max_age=15 * 60
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=15 * 60
     )
     response.set_cookie(
-        key="refresh_token", value=refresh_token,
-        httponly=True, secure=True, samesite="none", max_age=7 * 24 * 60 * 60
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7 * 24 * 60 * 60
     )
     # ----------------------------
     
     logger.info(f"User logged in: {user['email']}")
-    return responsee
+    return response
 
 
 @app.post("/api/auth/logout", tags=["Auth"])
@@ -420,12 +429,20 @@ async def refresh(
 
     response = JSONResponse(content={"message": "Token refreshed", "mesaj": "Token refreshed"})
     response.set_cookie(
-        key="access_token", value=access_token,
-        httponly=True, secure=True, samesite="none", max_age=15 * 60
+    key="access_token",
+    value=access_token,
+    httponly=True,
+    secure=True,
+    samesite="none",
+    max_age=15 * 60
     )
     response.set_cookie(
-        key="refresh_token", value=refresh_token,
-        httponly=True, secure=True, samesite="none", max_age=7 * 24 * 60 * 60
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7 * 24 * 60 * 60
     )
     return response
 
