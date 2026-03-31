@@ -39,6 +39,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const handleSessionExpired = () => {
+            // YENİ EKLENEN KISIM: Oturum kendiliğinden (hata vererek) düşerse kasayı temizle!
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
             setUser(null);
         };
 

@@ -4,14 +4,14 @@ import asyncio
 import os
 import secrets
 
-
 if sys.platform == 'win32' and os.getenv("PYTEST_RUNNING") != "1":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends, Cookie, BackgroundTasks, Request, status
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
@@ -58,21 +58,20 @@ INTERNAL_DEBUG_REQUIRE_ADMIN = settings.internal_debug_require_admin
 # Basit brute-force koruması (process bazlı)
 _failed_login_attempts: dict[str, deque] = defaultdict(deque)
 
+# BEARER TOKEN SECURITY INSTANCE
+security = HTTPBearer()
+
 # ¦¦ Auth Dependency ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
 async def get_db(request: Request):
     return request.app.state.db
 
-
+# COOKIE YERİNE BEARER TOKEN KULLANAN YENİ FONKSİYON
 async def get_current_user(
-    access_token: str = Cookie(default=None),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db=Depends(get_db)
 ) -> dict:
-    if not access_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="You need to login"
-        )
-    payload = decode_token(access_token)
+    token = credentials.credentials
+    payload = decode_token(token)
     if not payload or payload.get("type") != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -102,11 +101,17 @@ def _clear_failed_logins(key: str):
     _failed_login_attempts.pop(key, None)
 
 
+# YENİ EKLENEN SCHEMALAR (Refresh ve Logout body payload'ları için)
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
+
 class PaymentCheckoutStartRequest(BaseModel):
     provider: str
     plan: str = "pro"
     interval: str = "monthly"
-
 
 class PaymentVerifyRequest(BaseModel):
     provider: str                   # "stripe" | "iyzico"
@@ -170,6 +175,7 @@ app = FastAPI(
     version="2.1.0",
     lifespan=lifespan,
 )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -327,54 +333,45 @@ async def login(data: UserLogin, request: Request, db=Depends(get_db)):
         "user_agent": request.headers.get("user-agent", "")
     })
 
-    response = JSONResponse(content={
-    "message": "Login successful",
-    "mesaj": "Login successful",
-    "email": user["email"],
-    "plan": user.get("plan", "free"),
-    "access_token": access_token,
-    "refresh_token": refresh_token,
-    })
-    
-    # --- DEĞİŞEN KISIM BURASI ---
-    
-
-    
-    # ----------------------------
-    
     logger.info(f"User logged in: {user['email']}")
-    return response
+    
+    # JSON RESPONSE İLE TOKENLERİ DİREKT GÖVDEYE YAZDIRIYORUZ
+    return {
+        "message": "Login successful",
+        "mesaj": "Login successful",
+        "email": user["email"],
+        "plan": user.get("plan", "free"),
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
 
 
 @app.post("/api/auth/logout", tags=["Auth"])
 async def logout(
-    refresh_token: str = Cookie(default=None),
+    data: Optional[LogoutRequest] = None, # Body'den okuyoruz artık
     db=Depends(get_db)
 ):
-    if refresh_token:
+    if data and data.refresh_token:
         refresh_repo = RefreshTokenRepository(db)
-        await refresh_repo.revoke_by_hash(hash_token(refresh_token))
+        await refresh_repo.revoke_by_hash(hash_token(data.refresh_token))
 
-    response = JSONResponse(content={"message": "Logged out successfully", "mesaj": "Logged out successfully"})
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
-    return response
+    return {"message": "Logged out successfully", "mesaj": "Logged out successfully"}
 
 
 @app.post("/api/auth/refresh", tags=["Auth"])
 async def refresh(
+    data: RefreshRequest, # Body'den okuyoruz artık
     request: Request,
-    refresh_token: str = Cookie(default=None),
     db=Depends(get_db)
 ):
-    if not refresh_token:
+    if not data.refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token not found"
         )
 
     refresh_repo = RefreshTokenRepository(db)
-    token_hash = hash_token(refresh_token)
+    token_hash = hash_token(data.refresh_token)
     existing_token = await refresh_repo.get_valid_by_hash(token_hash)
     if not existing_token:
         raise HTTPException(
@@ -382,7 +379,7 @@ async def refresh(
             detail="Refresh token is invalid or revoked"
         )
 
-    payload = decode_token(refresh_token)
+    payload = decode_token(data.refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -413,18 +410,12 @@ async def refresh(
         "user_agent": request.headers.get("user-agent", "")
     })
 
-    response = JSONResponse(content={"message": "Token refreshed", "mesaj": "Token refreshed"})
-    # cookie_opts = "HttpOnly; Secure; SameSite=None; Path=/"
-    # response.headers.append(
-    #     "Set-Cookie",
-    #     f"access_token={access_token}; {cookie_opts}; Max-Age={15 * 60}"
-    # )   
-
-    # response.headers.append(
-    #     "Set-Cookie",
-    #     f"refresh_token={new_refresh_token}; {cookie_opts}; Max-Age={7 * 24 * 60 * 60}"
-    # )
-    return response
+    return {
+        "message": "Token refreshed", 
+        "mesaj": "Token refreshed",
+        "access_token": access_token,
+        "refresh_token": new_refresh_token
+    }
 
 
 @app.get("/api/auth/me", tags=["Auth"])
@@ -1162,5 +1153,3 @@ async def scrape_and_update(product_id: str, url: str, db):
     else:
         await pool_repo.increment_error(product_id)
         logger.error(f"Background scrape failed: {url}")
-
-

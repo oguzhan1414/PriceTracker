@@ -59,19 +59,32 @@ async function rawRequest(path: string, options: ApiRequestOptions = {}): Promis
     return fetch(`${API_BASE_URL}${path}`, {
         ...options,
         headers,
-        credentials: 'include',
+        // credentials: 'include' kısmını tamamen sildik (Artık çerez kullanmıyoruz)
         body: options.body ? JSON.stringify(options.body) : undefined,
     });
 }
 
 async function tryRefreshToken(): Promise<boolean> {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) return false;
+
     try {
         const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
             method: 'POST',
-            credentials: 'include',
+            // credentials: 'include' sildik
             headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }) // Body'e koyduk
         });
-        return refreshRes.ok;
+
+        if (refreshRes.ok) {
+            const data = await refreshRes.json();
+            if (data.access_token && data.refresh_token) {
+                localStorage.setItem("access_token", data.access_token);
+                localStorage.setItem("refresh_token", data.refresh_token);
+                return true;
+            }
+        }
+        return false;
     } catch {
         return false;
     }
@@ -85,8 +98,8 @@ async function request<T>(path: string, options: ApiRequestOptions = {}): Promis
         path.startsWith('/api/auth/login') ||
         path.startsWith('/api/auth/register') ||
         path.startsWith('/api/auth/refresh') ||
-        path.startsWith('/api/auth/logout') ||
-        path.startsWith('/api/auth/me');
+        path.startsWith('/api/auth/logout'); // /auth/me artık auth route değil, token yenilemeli
+        
     if (res.status === 401 && !isAuthRoute) {
         const refreshed = await tryRefreshToken();
         if (refreshed) {
@@ -250,7 +263,11 @@ export const authApi = {
     },
 
     logout: async () => {
-        const response = await request<{ message?: string; mesaj: string }>('/api/auth/logout', { method: 'POST' });
+        const refreshToken = localStorage.getItem("refresh_token");
+        const response = await request<{ message?: string; mesaj: string }>('/api/auth/logout', { 
+            method: 'POST',
+            body: { refresh_token: refreshToken } // Backend'e body içinde gönderiyoruz
+        });
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         invalidateCachedGet(['/api/auth/me', '/api/payments/config', '/api/payments/subscription']);
@@ -414,4 +431,3 @@ export const paymentApi = {
         return response;
     },
 };
-
