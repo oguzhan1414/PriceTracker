@@ -1,10 +1,12 @@
 FROM python:3.11-slim-bookworm
 
+# Listeye loglarda hata veren 'libasound2' paketini ekledik!
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     gnupg \
     ca-certificates \
     fonts-liberation \
+    libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
     libcups2 \
@@ -32,7 +34,10 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN playwright install --with-deps chromium
+
+# Playwright kurulumunu iki aşamaya böldük (En güvenli yol)
+RUN playwright install chromium
+RUN playwright install-deps chromium
 
 COPY . .
 
