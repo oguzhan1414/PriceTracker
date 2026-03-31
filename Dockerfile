@@ -46,4 +46,4 @@ ENV PYTHONPATH=/app
 
 # SİNSİ entrypoint.sh DOSYASINI ÇÖPE ATTIK! 
 # Sunucuyu Railway'in dinamik portuyla doğrudan ayağa kaldırıyoruz:
-CMD ["sh", "-c", "cd backend && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "cd price_tracker/backend && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
